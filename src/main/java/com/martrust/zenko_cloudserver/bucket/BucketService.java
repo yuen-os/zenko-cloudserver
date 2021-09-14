@@ -23,8 +23,6 @@ public class BucketService {
 
             try {
 
-
-
                 GetBucketAclResponse bucketACL =  s3Client.getBucketAcl(GetBucketAclRequest.builder().bucket(x.name()).build());
 
                 bucketACL.grants().forEach(y -> System.out.println(y.permissionAsString()));
@@ -65,9 +63,11 @@ public class BucketService {
 
         try {
 
+
             S3Waiter s3Waiter = s3Client.waiter();
             CreateBucketRequest bucketRequest = CreateBucketRequest.builder()
                     .bucket(bucketName)
+
                     .build();
 
             s3Client.createBucket(bucketRequest);
@@ -95,4 +95,19 @@ public class BucketService {
         return resp.sdkHttpResponse().isSuccessful();
     }
 
+
+    /**
+     * todo add req body to update versioning status
+     * @param s3Client
+     * @param bucketName
+     * @return
+     */
+    public boolean enableBucketVersioning (S3Client s3Client, String bucketName){
+
+        PutBucketVersioningRequest putBucketVersioningRequest = PutBucketVersioningRequest.builder().bucket(bucketName)
+                .versioningConfiguration(VersioningConfiguration.builder().status(BucketVersioningStatus.ENABLED).build())
+                .build();
+        PutBucketVersioningResponse resp = s3Client.putBucketVersioning(putBucketVersioningRequest);
+        return resp.sdkHttpResponse().isSuccessful();
+    }
 }

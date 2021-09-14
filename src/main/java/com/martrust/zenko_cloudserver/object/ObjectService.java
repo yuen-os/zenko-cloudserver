@@ -29,13 +29,14 @@ public class ObjectService {
 
         do{
 
+
+
             ListObjectsV2Response objects =  s3Client.listObjectsV2(req);
             hasNext = objects.isTruncated();
 
             if(objects.hasContents()){
 
                 lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
-
                 objects.contents().forEach(x->{
 
                     objectList.add(Map.of(
@@ -55,6 +56,83 @@ public class ObjectService {
 
         }while (hasNext);
 
+        return objectList;
+
+    }
+
+    /**
+     * doesn't show on cyberduck console the versions, only the latest
+     * will not get error even if the bucket is not version
+     * this will only show the previous version not the delete marker
+     */
+    public List<Map<String,String>> listPageableObjVersionOnBucket(S3Client s3Client, String bucketName, Integer limit) {
+
+        List<Map<String,String>> objectList = new ArrayList<>();
+        boolean hasNext;
+        String lastObjKey = "";
+
+        ListObjectVersionsRequest req = ListObjectVersionsRequest.builder().bucket(bucketName).maxKeys(limit).build();
+
+
+            ListObjectVersionsResponse objects =  s3Client.listObjectVersions(req);
+            hasNext = objects.isTruncated();
+
+
+            if(!objects.versions().isEmpty()){
+
+//                objects.versions().forEach(x -> x.);
+//                lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
+                objects.versions().forEach(x->{
+                    objectList.add(Map.of(
+                            "key", x.key(),
+                            "size", x.size()/1024 + " KBs",
+                            "versionId", x.versionId(),
+                            "ownerName", x.owner().displayName(),
+                            "ownerId", x.owner().id(),
+                            "isLatest", x.isLatest().toString(),
+                            "etag", x.eTag(),
+                            "storageClass", x.storageClassAsString(),
+                            "lastModified", x.lastModified().toString()
+                    ));
+                });
+
+            }
+        return objectList;
+
+    }
+
+    /**
+     * this will only show the previous latest version and the delete marker
+     */
+    public List<Map<String,String>> listPageableObjDeleteMarkerOnBucket(S3Client s3Client, String bucketName, Integer limit) {
+
+        List<Map<String,String>> objectList = new ArrayList<>();
+        boolean hasNext;
+        String lastObjKey = "";
+
+        ListObjectVersionsRequest req = ListObjectVersionsRequest.builder().bucket(bucketName).maxKeys(limit).build();
+
+
+        ListObjectVersionsResponse objects =  s3Client.listObjectVersions(req);
+        hasNext = objects.isTruncated();
+
+
+        if(!objects.versions().isEmpty()){
+
+//                objects.versions().forEach(x -> x.);
+//                lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
+            objects.deleteMarkers().forEach(x->{
+                objectList.add(Map.of(
+                        "key", x.key(),
+                        "versionId", x.versionId(),
+                        "ownerName", x.owner().displayName(),
+                        "ownerId", x.owner().id(),
+                        "isLatest", x.isLatest().toString(),
+                        "lastModified", x.lastModified().toString()
+                ));
+            });
+
+        }
         return objectList;
 
     }
@@ -88,6 +166,7 @@ public class ObjectService {
 
     public boolean deleteFile(S3Client s3Client, String bucketName, String key){
         //do security check because they can delete files that are on different directory so check acl
+
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
@@ -97,7 +176,24 @@ public class ObjectService {
         return delObjResp.sdkHttpResponse().isSuccessful();
     }
 
+
+    public boolean deleteVersionedFile(S3Client s3Client, String bucketName, String key, String versionId){
+        //do security check because they can delete files that are on different directory so check acl
+
+
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .versionId(versionId)
+                .key(key)
+                .build();
+
+        DeleteObjectResponse delObjResp = s3Client.deleteObject(deleteObjectRequest);
+        return delObjResp.sdkHttpResponse().isSuccessful();
+    }
+
     public boolean uploadFile(S3Client s3Client, String bucketName, String dir, MultipartFile file) throws IOException {
+
+
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(dir.concat(file.getOriginalFilename()))

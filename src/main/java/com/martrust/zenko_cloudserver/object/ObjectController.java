@@ -34,6 +34,18 @@ public class ObjectController {
     }
 
 
+    @ApiOperation(value = "list objects without delete marker")
+    @GetMapping("/{bucketName}/file/version")
+    public ResponseEntity listPageableObjVersionOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit ) {
+        return ResponseEntity.status(200).body(objectService.listPageableObjVersionOnBucket(s3Client, bucketName, limit));
+    }
+
+    @ApiOperation(value = "list objects and the delete marker")
+    @GetMapping("/{bucketName}/file/version/delete-marker")
+    public ResponseEntity listPageableObjDeleteMarkerOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit ) {
+        return ResponseEntity.status(200).body(objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, limit));
+    }
+
     @ApiOperation(value = "upload file")
     @PostMapping("/{bucketName}/file")
     public ResponseEntity uploadFile(@PathVariable(name = "bucketName") String bucketName, @RequestParam("file") MultipartFile file, @RequestParam("dir") String dir) throws IOException {
@@ -50,6 +62,13 @@ public class ObjectController {
     @DeleteMapping("/{bucketName}/file")
     public ResponseEntity deleteFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
         return ResponseEntity.status(200).body(objectService.deleteFile( s3Client, bucketName, req.get("fileName")));
+    }
+
+
+    @ApiOperation(value = "delete version file")
+    @DeleteMapping("/{bucketName}/file/version")
+    public ResponseEntity deleteVersionFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
+        return ResponseEntity.status(200).body(objectService.deleteVersionedFile( s3Client, bucketName, req.get("fileName"), req.get("versionId") ));
     }
 
 

@@ -5,6 +5,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
+ *
+ * all sdk methods
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html
+ *
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/get-started.html
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials.html
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/examples-s3.html

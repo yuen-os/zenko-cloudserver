@@ -41,4 +41,10 @@ public class BucketController {
         return ResponseEntity.status(200).body(bucketService.deleteBucket(s3Client, bucketName));
     }
 
+    @ApiOperation(value = "update bucket version")
+    @PutMapping("/{bucketName}/version")
+    public ResponseEntity updateBucketVersioning(@PathVariable(name = "bucketName") String bucketName ){
+        return ResponseEntity.status(200).body(bucketService.enableBucketVersioning(s3Client, bucketName));
+    }
+
 }
