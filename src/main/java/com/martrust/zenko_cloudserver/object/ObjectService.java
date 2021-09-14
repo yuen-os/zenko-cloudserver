@@ -25,7 +25,7 @@ public class ObjectService {
         List<Map<String,String>> objectList = new ArrayList<>();
         boolean hasNext;
         String lastObjKey = "";
-        ListObjectsV2Request req = ListObjectsV2Request.builder().bucket(bucketName).maxKeys(limit).fetchOwner(true).build();
+        ListObjectsV2Request req = ListObjectsV2Request.builder().bucket(bucketName).maxKeys(limit). fetchOwner(true).build();
 
         do{
 

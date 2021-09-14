@@ -12,7 +12,8 @@ import java.io.IOException;
 import java.util.Map;
 
 @Api(tags = "Object Resource")
-@RestController("/api/bucket")
+@RestController
+@RequestMapping("/api/bucket")
 public class ObjectController {
 
     private S3Client s3Client;
