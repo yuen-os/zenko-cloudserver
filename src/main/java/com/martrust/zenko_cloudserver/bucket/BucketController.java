@@ -1,28 +1,14 @@
-package com.matrust.zenko_cloudserver.bucket;
+package com.martrust.zenko_cloudserver.bucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
-import software.amazon.awssdk.services.s3.waiters.S3Waiter;
-import software.amazon.awssdk.utils.IoUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.time.Duration;
 import java.util.*;
 
+@Api(tags = "Bucket Resource")
 @RequestMapping("/api/bucket")
 @RestController
 public class BucketController {
@@ -35,18 +21,21 @@ public class BucketController {
         this.bucketService = bucketService;
     }
 
+    @ApiOperation(value = "list buckets")
     @GetMapping
     public ResponseEntity listBuckets(@RequestParam(name = "limit", defaultValue = "1000") Integer limit){
          return ResponseEntity.status(200).body(bucketService.listBuckets(s3Client, limit));
     }
 
 
+    @ApiOperation(value = "create bucket")
     @PostMapping
     public ResponseEntity createBucket(@RequestBody Map<String, String> req){
         return ResponseEntity.status(200).body(bucketService.createBucket(s3Client, req.get("bucketName")));
     }
 
 
+    @ApiOperation(value = "delete bucket")
     @DeleteMapping("/{bucketName}")
     public ResponseEntity deleteBucket(@PathVariable(name = "bucketName") String bucketName ){
         return ResponseEntity.status(200).body(bucketService.deleteBucket(s3Client, bucketName));

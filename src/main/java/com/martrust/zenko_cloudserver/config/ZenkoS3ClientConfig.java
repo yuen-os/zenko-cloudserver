@@ -1,4 +1,4 @@
-package com.matrust.zenko_cloudserver.config;
+package com.martrust.zenko_cloudserver.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

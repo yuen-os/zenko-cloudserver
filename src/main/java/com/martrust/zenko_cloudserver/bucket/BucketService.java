@@ -1,4 +1,4 @@
-package com.matrust.zenko_cloudserver.bucket;
+package com.martrust.zenko_cloudserver.bucket;
 
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.waiters.WaiterResponse;

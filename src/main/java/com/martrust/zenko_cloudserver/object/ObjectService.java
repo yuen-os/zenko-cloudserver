@@ -1,4 +1,4 @@
-package com.matrust.zenko_cloudserver.object;
+package com.martrust.zenko_cloudserver.object;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

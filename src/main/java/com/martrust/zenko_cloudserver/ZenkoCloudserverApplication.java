@@ -1,14 +1,8 @@
-package com.matrust.zenko_cloudserver;
+package com.martrust.zenko_cloudserver;
 
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.*;
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
-
-import java.net.URI;
 
 /**
  * https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/get-started.html

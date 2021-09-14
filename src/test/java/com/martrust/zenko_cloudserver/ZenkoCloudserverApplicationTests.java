@@ -1,4 +1,4 @@
-package com.matrust.zenko_cloudserver;
+package com.martrust.zenko_cloudserver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
