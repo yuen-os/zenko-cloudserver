@@ -88,6 +88,7 @@ public class BucketService {
 
 
     // need to check acl, need to check if bucket has object
+    // in the future change to async since deleting large files can take much time
     public boolean deleteBucket(S3Client s3Client, String bucketName){
         DeleteBucketRequest deleteBucketRequest = DeleteBucketRequest.builder().bucket(bucketName).build();
         DeleteBucketResponse resp = s3Client.deleteBucket(deleteBucketRequest);

@@ -4,25 +4,30 @@ package com.martrust.zenko_cloudserver.swagger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.RequestMethod;
 import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.builders.ResponseMessageBuilder;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.ResponseMessage;
+import springfox.documentation.schema.Example;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static springfox.documentation.builders.PathSelectors.regex;
 
+/**
+ * https://tahaburak.medium.com/spring-boot-005-swagger-3-0-implementation-97ec6fd07dce
+ */
 @Configuration
-@EnableSwagger2
 public class SwaggerConfig {
-
 
     private final String CONTROLLER_PACKAGE = "com.martrust.zenko_cloudserver";
 
@@ -32,10 +37,10 @@ public class SwaggerConfig {
     @Bean
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
-                .globalResponseMessage(RequestMethod.GET, this.buildDefaultResp())
-                .globalResponseMessage(RequestMethod.POST, this.buildDefaultResp())
-                .globalResponseMessage(RequestMethod.PUT, this.buildDefaultResp())
-                .globalResponseMessage(RequestMethod.DELETE, this.buildDefaultResp())
+                .globalResponses(HttpMethod.GET, this.buildDefaultResp())
+                .globalResponses(HttpMethod.POST, this.buildDefaultResp())
+                .globalResponses(HttpMethod.PUT, this.buildDefaultResp())
+                .globalResponses(HttpMethod.DELETE, this.buildDefaultResp())
                 .useDefaultResponseMessages(false)
                 .select()
                 .apis(RequestHandlerSelectors.basePackage(CONTROLLER_PACKAGE))
@@ -52,12 +57,12 @@ public class SwaggerConfig {
                 .build();
     }
 
-    private List<ResponseMessage> buildDefaultResp() {
+    private List<Response> buildDefaultResp() {
         return Arrays.asList(
-                new ResponseMessageBuilder().code(500).message(swaggerRespEnv.getAppDefaultMsgInternalServer()).build(),
-                new ResponseMessageBuilder().code(405).message(swaggerRespEnv.getAppDefaultMsgMethodNotSupported()).build(),
-                new ResponseMessageBuilder().code(404).message(swaggerRespEnv.getAppDefaultMsgNotFound()).build(),
-                new ResponseMessageBuilder().code(401).message(swaggerRespEnv.getAppDefaultMsgUnauthenticated()).build()
+        new  Response("500", swaggerRespEnv.getAppDefaultMsgInternalServer(), true, new ArrayList<Header>(),  new ArrayList<Representation>(), new ArrayList<Example>(),  new ArrayList<VendorExtension>()),
+        new  Response("405", swaggerRespEnv.getAppDefaultMsgMethodNotSupported(), true, new ArrayList<Header>(),  new ArrayList<Representation>(), new ArrayList<Example>(),  new ArrayList<VendorExtension>()),
+        new  Response("404", swaggerRespEnv.getAppDefaultMsgNotFound(), true, new ArrayList<Header>(),  new ArrayList<Representation>(), new ArrayList<Example>(),  new ArrayList<VendorExtension>()),
+        new  Response("401", swaggerRespEnv.getAppDefaultMsgUnauthenticated(), true, new ArrayList<Header>(),  new ArrayList<Representation>(), new ArrayList<Example>(),  new ArrayList<VendorExtension>())
         );
     }
 }
