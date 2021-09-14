@@ -3,6 +3,10 @@ package com.martrust.zenko_cloudserver.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -28,13 +32,21 @@ public class ZenkoS3ClientConfig {
     @Value("${zenko.s3.url}")
     private String url;
 
+    @Value("${aws.accessKeyId}")
+    private String accessKey;
+
+    @Value("${aws.secretAccessKey}")
+    private String secretAccessKey;
+
     @Value("${zenko.s3.region}")
     private String region;
 
     @Bean
     public S3Client zenkoS3Client(){
-       return S3Client.builder()
+        AwsCredentials awsCred = AwsBasicCredentials.create(accessKey, secretAccessKey);
+        return S3Client.builder()
                 .endpointOverride(URI.create(url))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCred))
                 .region(Region.of(region))
                 .build();
     }
@@ -45,8 +57,10 @@ public class ZenkoS3ClientConfig {
     //https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/s3/presigner/S3Presigner.html
     @Bean
     public S3Presigner s3Presigner(){
+        AwsCredentials awsCred = AwsBasicCredentials.create(accessKey, secretAccessKey);
         return S3Presigner.builder()
                 .endpointOverride(URI.create(url))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCred))
                 .region(Region.of(region))
                 .build();
     }
