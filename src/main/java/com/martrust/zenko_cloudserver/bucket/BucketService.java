@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class BucketService {
@@ -36,7 +37,15 @@ public class BucketService {
 
                 ListObjectsResponse res =  s3Client.listObjects(listObjects);
 
+                GetBucketEncryptionResponse getBucketEncryptionResponse = null;
+                boolean isBucketEncrypted = true;
+                try {
+                    getBucketEncryptionResponse = s3Client.getBucketEncryption(GetBucketEncryptionRequest.builder().bucket(x.name()).build());
 
+                }catch (Exception exception){
+                    //cannot get sdkHttpResp since it throws s3 exception when not found
+                    isBucketEncrypted = false;
+                }
 
                 bucketList.add(Map.of(
 
@@ -44,8 +53,9 @@ public class BucketService {
                         "name", x.name() ,
                         "isBucketEmpty", !res.hasContents(),
                         "region", "sample",
-
-                        //nullable resp of getversion of bucket
+                        "isBucketEncrypted", isBucketEncrypted,
+                        "encryption",  isBucketEncrypted ? getBucketEncryptionResponse.serverSideEncryptionConfiguration().rules().stream().map(h -> h.applyServerSideEncryptionByDefault().sseAlgorithmAsString()): "none",
+                //nullable resp of getversion of bucket
                         "isBucketVersioned" , Objects.isNull(asd.status()) ? false: true
 
                 ));
@@ -63,7 +73,6 @@ public class BucketService {
 
         try {
 
-
             S3Waiter s3Waiter = s3Client.waiter();
             CreateBucketRequest bucketRequest = CreateBucketRequest.builder()
                     .bucket(bucketName)
@@ -78,8 +87,9 @@ public class BucketService {
 
             // Wait until the bucket is created and print out the response
             WaiterResponse<HeadBucketResponse> waiterResponse = s3Waiter.waitUntilBucketExists(bucketRequestWait);
-            return waiterResponse.matched().response().isPresent();
+            s3Client.putBucketEncryption(PutBucketEncryptionRequest.builder().bucket(bucketName).serverSideEncryptionConfiguration(ServerSideEncryptionConfiguration.builder().rules(ServerSideEncryptionRule.builder().applyServerSideEncryptionByDefault(ServerSideEncryptionByDefault.builder().sseAlgorithm(ServerSideEncryption.AES256).build()).build()).build()).build());
 
+            return waiterResponse.matched().response().isPresent();
         } catch (S3Exception e) {
             System.err.println(e.awsErrorDetails().errorMessage());
             return  false;

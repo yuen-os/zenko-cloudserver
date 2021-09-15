@@ -194,8 +194,12 @@ public class ObjectService {
     public boolean uploadFile(S3Client s3Client, String bucketName, String dir, MultipartFile file) throws IOException {
 
 
+        HeadBucketResponse gg = s3Client.headBucket( HeadBucketRequest.builder().bucket(bucketName).build());
+
+
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
+//                .serverSideEncryption(ServerSideEncryption.AES256)
                 .key(dir.concat(file.getOriginalFilename()))
                 .build();
 
