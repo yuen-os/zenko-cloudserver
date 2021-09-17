@@ -6,8 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import java.util.*;
-
 @Api(tags = "Bucket Resource")
 @RequestMapping("/api/bucket")
 @RestController
@@ -21,17 +19,18 @@ public class BucketController {
         this.bucketService = bucketService;
     }
 
-    @ApiOperation(value = "list buckets")
+
+    @ApiOperation(value = "list buckets", response = GetBucketResp.class, responseContainer = "List")
     @GetMapping
-    public ResponseEntity listBuckets(@RequestParam(name = "limit", defaultValue = "1000") Integer limit){
-         return ResponseEntity.status(200).body(bucketService.listBuckets(s3Client, limit));
+    public ResponseEntity listBuckets(){
+         return ResponseEntity.status(200).body(bucketService.listBuckets(s3Client));
     }
 
 
     @ApiOperation(value = "create bucket")
     @PostMapping
-    public ResponseEntity createBucket(@RequestBody Map<String, String> req){
-        return ResponseEntity.status(200).body(bucketService.createBucket(s3Client, req.get("bucketName")));
+    public ResponseEntity createBucket(@RequestBody CreateBucketReq req){
+        return ResponseEntity.status(200).body(bucketService.createBucket(s3Client, req));
     }
 
 

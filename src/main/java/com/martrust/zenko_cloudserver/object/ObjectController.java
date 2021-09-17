@@ -2,6 +2,7 @@ package com.martrust.zenko_cloudserver.object;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,21 +30,25 @@ public class ObjectController {
 
     @ApiOperation(value = "list objects")
     @GetMapping("/{bucketName}/file")
-    public ResponseEntity listPageableObjOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit ) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjOnBucket(s3Client, bucketName, limit));
+    public ResponseEntity listPageableObjOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+                                                  @RequestParam(name = "startAfterKey", defaultValue = "") String startAfterKey,
+                                                  @RequestParam(name = "prefix", defaultValue = "") String prefix) {
+        return ResponseEntity.status(200).body(objectService.listPageableObjOnBucket(s3Client, bucketName, prefix, startAfterKey, limit));
     }
 
 
     @ApiOperation(value = "list objects without delete marker")
     @GetMapping("/{bucketName}/file/version")
-    public ResponseEntity listPageableObjVersionOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit ) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjVersionOnBucket(s3Client, bucketName, limit));
+    public ResponseEntity listPageableObjVersionOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+                                                         @RequestParam(name = "prefix", defaultValue = "") String prefix) {
+        return ResponseEntity.status(200).body(objectService.listPageableObjVersionOnBucket(s3Client, bucketName, prefix, limit));
     }
 
     @ApiOperation(value = "list objects and the delete marker")
     @GetMapping("/{bucketName}/file/version/delete-marker")
-    public ResponseEntity listPageableObjDeleteMarkerOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit ) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, limit));
+    public ResponseEntity listPageableObjDeleteMarkerOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+                                                              @RequestParam(name = "prefix", defaultValue = "") String prefix) {
+        return ResponseEntity.status(200).body(objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, prefix, limit));
     }
 
     @ApiOperation(value = "upload file")
@@ -54,7 +59,9 @@ public class ObjectController {
 
     @ApiOperation(value = "generate signed url")
     @PostMapping("/{bucketName}/file-url")
-    public ResponseEntity generatePresignedUrl(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
+    public ResponseEntity generatePresignedUrl(@PathVariable(name = "bucketName") String bucketName,
+                                               @ApiParam( value = "Filename", example = "{\"fileName\":\"string\"}", required = true)
+                                               @RequestBody Map<String, String> req) {
         return ResponseEntity.status(200).body(objectService.generatePresignedUrl( s3Presigner,  bucketName, req.get("fileName")));
     }
 

@@ -25,6 +25,7 @@ import static springfox.documentation.builders.PathSelectors.regex;
 
 /**
  * https://tahaburak.medium.com/spring-boot-005-swagger-3-0-implementation-97ec6fd07dce
+ * https://stackoverflow.com/questions/64236324/swagger-ui-does-not-display-response-models-from-custom-annotation-interface
  */
 @Configuration
 public class SwaggerConfig {

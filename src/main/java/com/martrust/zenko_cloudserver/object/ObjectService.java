@@ -1,6 +1,5 @@
 package com.martrust.zenko_cloudserver.object;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -14,158 +13,130 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ObjectService {
 
+    /**
+     * todo: validation of bucket, limit, error catching
+     * even if the startAtKey is invalid still don't throw error
+     * https://stackoverflow.com/questions/59203291/aws-s3-sdk-listobjectsv2-whats-difference-between-startafter-and-continuationto
+     */
+    public List<GetObjResp> listPageableObjOnBucket(S3Client s3Client, String bucketName,  String prefix,  String startAfterKey, Integer limit) {
 
-    public List<Map<String,String>> listPageableObjOnBucket(S3Client s3Client, String bucketName, Integer limit) {
+        List<GetObjResp> objList = new ArrayList<>();
+        String lastObjKey;
+        ListObjectsV2Request req = ListObjectsV2Request.builder()
+                .bucket(bucketName).maxKeys(limit).prefix(prefix)
+                .startAfter(startAfterKey).fetchOwner(true).build();
+        ListObjectsV2Response objects =  s3Client.listObjectsV2(req);
 
-        List<Map<String,String>> objectList = new ArrayList<>();
-        boolean hasNext;
-        String lastObjKey = "";
-        ListObjectsV2Request req = ListObjectsV2Request.builder().bucket(bucketName).maxKeys(limit). fetchOwner(true).build();
+        if(objects.hasContents()){
+            lastObjKey = objects.contents().get(objects.contents().size()-1 ).key();
+            objects.contents().forEach(x->{
 
-        do{
-
-
-
-            ListObjectsV2Response objects =  s3Client.listObjectsV2(req);
-            hasNext = objects.isTruncated();
-
-            if(objects.hasContents()){
-
-                lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
-                objects.contents().forEach(x->{
-
-                    objectList.add(Map.of(
-                            "key", x.key(),
-                            "size", x.size()/1024 + " KBs",
-                            "ownerName", x.owner().displayName(),
-                            "ownerId", x.owner().id(),
-                            "etag", x.eTag(),
-                            "storageClass", x.storageClassAsString(),
-                            "lastModified", x.lastModified().toString()
-                    ));
-                });
-
-            }
-
-            req = ListObjectsV2Request.builder().bucket(bucketName).startAfter(lastObjKey).fetchOwner(true).maxKeys(limit).build();
-
-        }while (hasNext);
-
-        return objectList;
-
+                objList.add(
+                        GetObjResp.builder()
+                                .key(x.key())
+                                .size(x.size()/1024 + " KBs")
+                                .ownerName( x.owner().displayName())
+                                .ownerId(x.owner().id())
+                                .etag(x.eTag())
+                                .storageClass(x.storageClassAsString())
+                                .lastModifiedDate(x.lastModified().toString())
+                                .lastObjKey(lastObjKey)
+                                .build());
+            });
+        }
+        return objList;
     }
 
+
     /**
+     * todo: validation of bucket, limit, error catching
      * doesn't show on cyberduck console the versions, only the latest
      * will not get error even if the bucket is not version
      * this will only show the previous version not the delete marker
      */
-    public List<Map<String,String>> listPageableObjVersionOnBucket(S3Client s3Client, String bucketName, Integer limit) {
+        public List<GetObjVersionedResp> listPageableObjVersionOnBucket(S3Client s3Client, String bucketName, String prefix, Integer limit) {
 
-        List<Map<String,String>> objectList = new ArrayList<>();
-        boolean hasNext;
-        String lastObjKey = "";
-
-        ListObjectVersionsRequest req = ListObjectVersionsRequest.builder().bucket(bucketName).maxKeys(limit).build();
-
-
-            ListObjectVersionsResponse objects =  s3Client.listObjectVersions(req);
-            hasNext = objects.isTruncated();
-
+            List<GetObjVersionedResp> objVersionedList = new ArrayList<>();
+            ListObjectVersionsResponse objects =  s3Client.listObjectVersions(ListObjectVersionsRequest.builder()
+                .bucket(bucketName).maxKeys(limit).prefix(prefix).build());
 
             if(!objects.versions().isEmpty()){
 
-//                objects.versions().forEach(x -> x.);
-//                lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
-                objects.versions().forEach(x->{
-                    objectList.add(Map.of(
-                            "key", x.key(),
-                            "size", x.size()/1024 + " KBs",
-                            "versionId", x.versionId(),
-                            "ownerName", x.owner().displayName(),
-                            "ownerId", x.owner().id(),
-                            "isLatest", x.isLatest().toString(),
-                            "etag", x.eTag(),
-                            "storageClass", x.storageClassAsString(),
-                            "lastModified", x.lastModified().toString()
-                    ));
+                objects.versions().forEach(x-> {
+                    objVersionedList.add(
+                            GetObjVersionedResp.builder()
+                            .key(x.key())
+                            .size(x.size()/1024 + " KBs")
+                            .versionId(x.versionId())
+                            .ownerName(x.owner().displayName())
+                            .ownerId(x.owner().id())
+                            .isLatest(x.isLatest())
+                            .etag(x.eTag())
+                            .storageClass(x.storageClassAsString())
+                            .lastModifiedDate(x.lastModified().toString())
+                            .build());
                 });
 
             }
-        return objectList;
+        return objVersionedList;
 
     }
 
     /**
-     * this will only show the previous latest version and the delete marker
+     * todo: validation of bucket, limit, error catching
+     * this will only show the latest version delete marker
+     * if you want to restore an object just delete the latest
+     * delete marker on the delete version endpoint
      */
-    public List<Map<String,String>> listPageableObjDeleteMarkerOnBucket(S3Client s3Client, String bucketName, Integer limit) {
+    public List<GetObjDeleteMarkerResp> listPageableObjDeleteMarkerOnBucket(S3Client s3Client, String bucketName, String prefix, Integer limit) {
 
-        List<Map<String,String>> objectList = new ArrayList<>();
-        boolean hasNext;
-        String lastObjKey = "";
-
-        ListObjectVersionsRequest req = ListObjectVersionsRequest.builder().bucket(bucketName).maxKeys(limit).build();
-
-
-        ListObjectVersionsResponse objects =  s3Client.listObjectVersions(req);
-        hasNext = objects.isTruncated();
-
+        List<GetObjDeleteMarkerResp> objDeleteMarkerList = new ArrayList<>();
+        ListObjectVersionsResponse objects =  s3Client.listObjectVersions(ListObjectVersionsRequest.builder()
+                .bucket(bucketName).maxKeys(limit).prefix(prefix).build());
 
         if(!objects.versions().isEmpty()){
-
-//                objects.versions().forEach(x -> x.);
-//                lastObjKey =   objects.contents().get(objects.contents().size()-1 ).key();
-            objects.deleteMarkers().forEach(x->{
-                objectList.add(Map.of(
-                        "key", x.key(),
-                        "versionId", x.versionId(),
-                        "ownerName", x.owner().displayName(),
-                        "ownerId", x.owner().id(),
-                        "isLatest", x.isLatest().toString(),
-                        "lastModified", x.lastModified().toString()
-                ));
+            objects.deleteMarkers().stream().filter(DeleteMarkerEntry::isLatest).forEach(x->{
+                objDeleteMarkerList.add(
+                        GetObjDeleteMarkerResp.builder()
+                        .key(x.key())
+                        .versionId(x.versionId())
+                        .ownerName(x.owner().displayName())
+                        .ownerId(x.owner().id())
+                        .isLatest(x.isLatest())
+                        .lastModifiedDate(x.lastModified().toString())
+                        .build());
             });
-
         }
-        return objectList;
-
+        return objDeleteMarkerList;
     }
 
+    /**
+     * todo: validation of bucket, limit, error catching
+     */
     public String generatePresignedUrl(S3Presigner s3Presigner, String bucketName, String keyName ) {
 
-        try {
-            GetObjectRequest getObjectRequest =
-                    GetObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(keyName)
-                            .build();
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                            .bucket(bucketName).key(keyName).build();
 
             GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofHours(7))
-                    .getObjectRequest(getObjectRequest)
-                    .build();
+                    .getObjectRequest(getObjectRequest).build();
 
-            // Generate the presigned request
             PresignedGetObjectRequest presignedGetObjectRequest =
                     s3Presigner.presignGetObject(getObjectPresignRequest);
 
             return presignedGetObjectRequest.url().toString();
 
-        } catch (S3Exception e) {
-            e.getStackTrace();
-            return null;
-        }
-
     }
 
+    /**
+     * todo: validation of bucket, limit, error catching, authorization before deleting (business rule)
+     */
     public boolean deleteFile(S3Client s3Client, String bucketName, String key){
-        //do security check because they can delete files that are on different directory so check acl
 
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
@@ -177,34 +148,31 @@ public class ObjectService {
     }
 
 
+    /**
+     * todo: validation of bucket, limit, error catching, authorization before deleting (business rule)
+     */
     public boolean deleteVersionedFile(S3Client s3Client, String bucketName, String key, String versionId){
-        //do security check because they can delete files that are on different directory so check acl
-
 
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .versionId(versionId)
-                .key(key)
-                .build();
+                .bucket(bucketName).versionId(versionId)
+                .key(key).build();
 
         DeleteObjectResponse delObjResp = s3Client.deleteObject(deleteObjectRequest);
         return delObjResp.sdkHttpResponse().isSuccessful();
     }
 
+    /**
+     * todo: validation of bucket, limit, dir, error catching, authorization before deleting (business rule)
+     */
     public boolean uploadFile(S3Client s3Client, String bucketName, String dir, MultipartFile file) throws IOException {
-
-
-        HeadBucketResponse gg = s3Client.headBucket( HeadBucketRequest.builder().bucket(bucketName).build());
-
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-//                .serverSideEncryption(ServerSideEncryption.AES256)
+                .serverSideEncryption(ServerSideEncryption.AES256)
                 .key(dir.concat(file.getOriginalFilename()))
                 .build();
 
         PutObjectResponse resp =  s3Client.putObject(objectRequest, RequestBody.fromBytes(file.getBytes()));
-
         return  resp.sdkHttpResponse().isSuccessful();
     }
 
