@@ -92,16 +92,16 @@ public class BucketService {
         List<GetObjDeleteMarkerResp> objDeleteMarkerList = objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, "", 1000);
 
         // delete all object first
-        do{
+        while (!objVersionedList.isEmpty()){
             objVersionedList.forEach( x -> objectService.deleteVersionedFile(s3Client, bucketName, x.getKey(), x.getVersionId()));
             objVersionedList = objectService.listPageableObjVersionOnBucket(s3Client, bucketName, "", 1000);
-        }while (!objVersionedList.isEmpty());
+        }
 
         // delete all object delete-marker first
-        do{
+        while (!objDeleteMarkerList.isEmpty()){
             objDeleteMarkerList.forEach( x -> objectService.deleteVersionedFile(s3Client, bucketName, x.getKey(), x.getVersionId()));
             objDeleteMarkerList = objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, "", 1000);
-        }while (!objDeleteMarkerList.isEmpty());
+        }
 
         DeleteBucketRequest deleteBucketRequest = DeleteBucketRequest.builder().bucket(bucketName).build();
         DeleteBucketResponse resp = s3Client.deleteBucket(deleteBucketRequest);
