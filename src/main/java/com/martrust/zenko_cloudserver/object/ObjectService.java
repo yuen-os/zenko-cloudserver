@@ -98,8 +98,8 @@ public class ObjectService {
         ListObjectVersionsResponse objects =  s3Client.listObjectVersions(ListObjectVersionsRequest.builder()
                 .bucket(bucketName).maxKeys(limit).prefix(prefix).build());
 
-        if(!objects.versions().isEmpty()){
-            objects.deleteMarkers().stream().filter(DeleteMarkerEntry::isLatest).forEach(x->{
+        if(!objects.versions().isEmpty() || !objects.deleteMarkers().isEmpty()){
+            objects.deleteMarkers().forEach(x->{
                 objDeleteMarkerList.add(
                         GetObjDeleteMarkerResp.builder()
                         .key(x.key())

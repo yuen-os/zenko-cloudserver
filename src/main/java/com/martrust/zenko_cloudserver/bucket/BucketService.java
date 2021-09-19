@@ -1,6 +1,8 @@
 package com.martrust.zenko_cloudserver.bucket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.martrust.zenko_cloudserver.object.GetObjDeleteMarkerResp;
+import com.martrust.zenko_cloudserver.object.GetObjVersionedResp;
 import com.martrust.zenko_cloudserver.object.ObjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -85,6 +87,22 @@ public class BucketService {
      * in the future change to async since deleting large files can take much time
      */
     public boolean deleteBucket(S3Client s3Client, String bucketName){
+
+        List<GetObjVersionedResp> objVersionedList = objectService.listPageableObjVersionOnBucket(s3Client, bucketName, "", 1000);
+        List<GetObjDeleteMarkerResp> objDeleteMarkerList = objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, "", 1000);
+
+        // delete all object first
+        do{
+            objVersionedList.forEach( x -> objectService.deleteVersionedFile(s3Client, bucketName, x.getKey(), x.getVersionId()));
+            objVersionedList = objectService.listPageableObjVersionOnBucket(s3Client, bucketName, "", 1000);
+        }while (!objVersionedList.isEmpty());
+
+        // delete all object delete-marker first
+        do{
+            objDeleteMarkerList.forEach( x -> objectService.deleteVersionedFile(s3Client, bucketName, x.getKey(), x.getVersionId()));
+            objDeleteMarkerList = objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, "", 1000);
+        }while (!objDeleteMarkerList.isEmpty());
+
         DeleteBucketRequest deleteBucketRequest = DeleteBucketRequest.builder().bucket(bucketName).build();
         DeleteBucketResponse resp = s3Client.deleteBucket(deleteBucketRequest);
         return resp.sdkHttpResponse().isSuccessful();
@@ -106,125 +124,4 @@ public class BucketService {
         PutBucketVersioningResponse resp = s3Client.putBucketVersioning(putBucketVersioningRequest);
         return resp.sdkHttpResponse().isSuccessful();
     }
-
-
-
-    /*************** EXPERIMENTAL ***************/
-
-    public boolean addBucketLifeCycleRule(S3Client s3Client, String bucketName){
-        Transition transition = Transition.builder()
-                .storageClass("us-east-2")
-//                .date(Instant.now().plusSeconds(TimeUnit.MINUTES.toSeconds(5) ))
-                .days(6)
-//                .date(Instant.now().plusSeconds(TimeUnit.DAYS.toSeconds(30) ))
-                .build();
-
-        LifecycleRule lifecycleRule =  LifecycleRule.builder()
-                .status(ExpirationStatus.ENABLED)
-                .id("transition_to_next_buck")
-                .filter(LifecycleRuleFilter.builder().prefix("/").build())
-                .transitions(transition)
-                .build();
-
-        BucketLifecycleConfiguration bucketLifecycleConfiguration =  BucketLifecycleConfiguration.builder().rules(lifecycleRule).build();
-
-        PutBucketLifecycleConfigurationRequest putBucketLifecycleConfigurationRequest = PutBucketLifecycleConfigurationRequest.builder().lifecycleConfiguration(bucketLifecycleConfiguration).bucket(bucketName).build();
-
-
-        PutBucketLifecycleConfigurationResponse asd = s3Client.putBucketLifecycleConfiguration(putBucketLifecycleConfigurationRequest);
-        System.out.println(asd.toString());
-        System.out.println(bucketName);
-        System.out.println(asd.sdkHttpResponse().statusCode());
-        System.out.println(asd.sdkHttpResponse().statusText().get());
-        return asd.sdkHttpResponse().isSuccessful();
-    }
-
-//    Validate that destination bucket exists and has versioning
-    //https://zenko.readthedocs.io/en/latest/reference/command_reference/s3api_commands/put-bucket-replication.html
-    public boolean addBucketReplication(S3Client s3Client, String bucketName){
-
-
-        String iamRoleArn = "arn:aws:iam::123456789012:root";
-//        String iamRoleArn = "arn:aws:iam::123456789012:role/s3-replication-role";
-
-//        String replicationId = "sample_replication_from_to_bucket";
-        ReplicationRuleFilter replicationRuleFilter = ReplicationRuleFilter.builder().prefix("").build();
-        Destination bucketDestination = Destination.builder().bucket("second-bucket")
-                .storageClass(StorageClass.STANDARD)
-                .build();
-
-        DeleteMarkerReplication deleteMarkerReplication = DeleteMarkerReplication.builder().status(DeleteMarkerReplicationStatus.ENABLED).build();
-        ExistingObjectReplication existingObjectReplication = ExistingObjectReplication.builder().status(ExistingObjectReplicationStatus.ENABLED).build();
-
-        ReplicationRule replicationRule = ReplicationRule.builder()
-//                .id(replicationId)
-                .destination(bucketDestination)
-                .status(ReplicationRuleStatus.ENABLED)
-                .priority(1).deleteMarkerReplication(deleteMarkerReplication)
-                .existingObjectReplication(existingObjectReplication)
-                .filter(replicationRuleFilter).build();
-
-        ReplicationConfiguration replicationConfiguration = ReplicationConfiguration.builder() .role(iamRoleArn).rules(replicationRule).build();
-
-        PutBucketReplicationRequest putBucketReplicationRequest = PutBucketReplicationRequest.builder().bucket(bucketName).replicationConfiguration(replicationConfiguration).build();
-
-        PutBucketReplicationResponse response = s3Client.putBucketReplication(putBucketReplicationRequest);
-
-        System.out.println(response.toString());
-        System.out.println(bucketName);
-        System.out.println(response.sdkHttpResponse().statusCode());
-        System.out.println(response.sdkHttpResponse().statusText().get());
-        return response.sdkHttpResponse().isSuccessful();
-    }
-
-//    https://awspolicygen.s3.amazonaws.com/policygen.html
-//    https://awscli.amazonaws.com/v2/documentation/api/latest/reference/s3api/get-bucket-policy.html
-    public boolean addBucketPolicy(S3Client s3Client, String bucketName)  {
-//todo work on json policy
-        try {
-
-
-            ObjectMapper mapper = new ObjectMapper();
-
-            Map<String, Object> mainMap = new HashMap<>();
-            mainMap.put("Id", "Policy1631767102478");
-            mainMap.put("Version", "2012-10-17");
-
-
-
-
-            Map<String, Object> statementMap = new HashMap<>();
-            statementMap.put("Sid", "Stmt1631767101042");
-            statementMap.put("Action", "s3:*");
-            statementMap.put("Effect", "Allow");
-            statementMap.put("Resource", "arn:aws:s3:::second-bucket/*");
-            statementMap.put("Principal", "*");
-
-            mainMap.put("Statement", Arrays.asList(statementMap));
-
-            String jsonPolicy = mapper.writeValueAsString(mainMap);
-
-            System.out.println(jsonPolicy);
-
-            PutBucketPolicyRequest putBucketPolicyRequest = PutBucketPolicyRequest.builder().bucket(bucketName)
-                    .policy(jsonPolicy)
-                    .build();
-
-            PutBucketPolicyResponse response = s3Client.putBucketPolicy(putBucketPolicyRequest);
-
-            System.out.println(response.toString());
-            System.out.println(bucketName);
-            System.out.println(response.sdkHttpResponse().statusCode());
-            System.out.println(response.sdkHttpResponse().statusText().get());
-            return response.sdkHttpResponse().isSuccessful();
-        }catch (Exception e){
-            e.printStackTrace();
-            return false;
-        }
-
-    }
-
-
-
-
 }
