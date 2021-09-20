@@ -1,10 +1,12 @@
 package com.martrust.zenko_cloudserver.bucket;
 
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.List;
 
 @Api(tags = "Bucket Resource")
 @RequestMapping("/api/bucket")
@@ -20,29 +22,29 @@ public class BucketController {
     }
 
 
-    @ApiOperation(value = "list buckets", response = GetBucketResp.class, responseContainer = "List")
+    @ApiResponse(responseCode = "200", description = "list buckets")
     @GetMapping
-    public ResponseEntity listBuckets(){
+    public ResponseEntity<List<GetBucketResp>> listBuckets(){
          return ResponseEntity.status(200).body(bucketService.listBuckets(s3Client));
     }
 
 
-    @ApiOperation(value = "create bucket")
+    @ApiResponse(responseCode = "200", description = "create bucket")
     @PostMapping
-    public ResponseEntity createBucket(@RequestBody CreateBucketReq req){
+    public ResponseEntity<Boolean> createBucket(@RequestBody CreateBucketReq req){
         return ResponseEntity.status(200).body(bucketService.createBucket(s3Client, req));
     }
 
 
-    @ApiOperation(value = "delete bucket")
+    @ApiResponse(responseCode = "200", description = "delete bucket")
     @DeleteMapping("/{bucketName}")
-    public ResponseEntity deleteBucket(@PathVariable(name = "bucketName") String bucketName ){
+    public ResponseEntity<Boolean> deleteBucket(@PathVariable(name = "bucketName") String bucketName ){
         return ResponseEntity.status(200).body(bucketService.deleteBucket(s3Client, bucketName));
     }
 
-    @ApiOperation(value = "update bucket version")
+    @ApiResponse(responseCode = "200", description = "update bucket version")
     @PutMapping("/{bucketName}/version")
-    public ResponseEntity updateBucketVersioning(@PathVariable(name = "bucketName") String bucketName ){
+    public ResponseEntity<Boolean> updateBucketVersioning(@PathVariable(name = "bucketName") String bucketName ){
         return ResponseEntity.status(200).body(bucketService.enableBucketVersioning(s3Client, bucketName));
     }
 

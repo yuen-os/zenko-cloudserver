@@ -1,19 +1,24 @@
 package com.martrust.zenko_cloudserver.swagger;
 
 
+import com.fasterxml.classmate.TypeResolver;
+import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.schema.AlternateTypeRules;
 import springfox.documentation.schema.Example;
 import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static springfox.documentation.builders.PathSelectors.regex;
@@ -21,11 +26,12 @@ import static springfox.documentation.builders.PathSelectors.regex;
 /**
  * https://tahaburak.medium.com/spring-boot-005-swagger-3-0-implementation-97ec6fd07dce
  * https://stackoverflow.com/questions/64236324/swagger-ui-does-not-display-response-models-from-custom-annotation-interface
+ * https://stackoverflow.com/questions/54805169/set-list-of-objects-in-swagger-api-response
  */
 @Configuration
 public class SwaggerConfig {
 
-    private final String CONTROLLER_PACKAGE = "com.martrust.zenko_cloudserver";
+    private final String CONTROLLER_PACKAGE = "com.martrust";
 
     @Autowired
     private SwaggerRespEnv swaggerRespEnv;

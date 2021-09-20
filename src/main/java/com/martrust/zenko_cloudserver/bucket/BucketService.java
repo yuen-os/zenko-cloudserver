@@ -1,6 +1,5 @@
 package com.martrust.zenko_cloudserver.bucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.martrust.zenko_cloudserver.object.GetObjDeleteMarkerResp;
 import com.martrust.zenko_cloudserver.object.GetObjVersionedResp;
 import com.martrust.zenko_cloudserver.object.ObjectService;
@@ -9,7 +8,9 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class BucketService {
