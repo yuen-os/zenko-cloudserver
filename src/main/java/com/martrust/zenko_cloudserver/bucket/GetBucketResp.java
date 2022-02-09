@@ -1,7 +1,9 @@
 package com.martrust.zenko_cloudserver.bucket;
 
-import lombok.*;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
 

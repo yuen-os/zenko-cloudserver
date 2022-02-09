@@ -1,9 +1,7 @@
 package com.martrust.zenko_cloudserver.object;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,14 +12,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "Object Resource")
+@Tag(name = "Object Resource", description = "Endpoints for managing files/objects")
 @RestController
-@RequestMapping("/api/bucket")
+@RequestMapping("/bucket")
 public class ObjectController {
 
-    private S3Client s3Client;
-    private S3Presigner s3Presigner;
-    private ObjectService objectService;
+    private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
+    private final ObjectService objectService;
 
     public ObjectController(S3Client s3Client, S3Presigner s3Presigner, ObjectService objectService) {
         this.s3Client = s3Client;
@@ -30,58 +28,56 @@ public class ObjectController {
     }
 
 
-    @ApiResponse(responseCode = "200", description = "list objects on bucket")
-    @ApiOperation(value = "list objects")
+    @Operation(summary  = "list objects on bucket")
     @GetMapping("/{bucketName}/file")
-    public ResponseEntity<List<GetObjResp>> listPageableObjOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+    public ResponseEntity<Map<String, List<GetObjResp>>> listPageableObjOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
                                                                     @RequestParam(name = "startAfterKey", defaultValue = "") String startAfterKey,
                                                                     @RequestParam(name = "prefix", defaultValue = "") String prefix) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjOnBucket(s3Client, bucketName, prefix, startAfterKey, limit));
+        return ResponseEntity.status(200).body(Map.of("content", objectService.listPageableObjOnBucket(s3Client, bucketName, prefix, startAfterKey, limit)));
     }
 
 
 
-    @ApiResponse(responseCode = "200", description = "list objects without delete marker")
+    @Operation(summary  = "list objects without delete marker")
     @GetMapping("/{bucketName}/file/version")
-    public ResponseEntity listPageableObjVersionOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+    public ResponseEntity<Map<String, List<GetObjVersionedResp>>> listPageableObjVersionOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
                                                          @RequestParam(name = "prefix", defaultValue = "") String prefix) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjVersionOnBucket(s3Client, bucketName, prefix, limit));
+        return ResponseEntity.status(200).body(Map.of("content", objectService.listPageableObjVersionOnBucket(s3Client, bucketName, prefix, limit)));
     }
 
 
-    @ApiResponse(responseCode = "200", description = "list objects and the delete marker")
+    @Operation(summary  = "list objects and the delete marker")
     @GetMapping("/{bucketName}/file/version/delete-marker")
-    public ResponseEntity<List<GetObjDeleteMarkerResp>> listPageableObjDeleteMarkerOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
+    public ResponseEntity<Map<String, List<GetObjDeleteMarkerResp>>> listPageableObjDeleteMarkerOnBucket(@PathVariable(name = "bucketName") String bucketName, @RequestParam(name = "limit", defaultValue = "1000") Integer limit,
                                                               @RequestParam(name = "prefix", defaultValue = "") String prefix) {
-        return ResponseEntity.status(200).body(objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, prefix, limit));
+        return ResponseEntity.status(200).body(Map.of("content", objectService.listPageableObjDeleteMarkerOnBucket(s3Client, bucketName, prefix, limit)));
     }
 
-    @ApiResponse(responseCode = "200", description = "upload file")
+    @Operation(summary  = "upload file")
     @PostMapping("/{bucketName}/file")
-    public ResponseEntity<Boolean> uploadFile(@PathVariable(name = "bucketName") String bucketName, @RequestParam("file") MultipartFile file, @RequestParam("dir") String dir) throws IOException {
-        return ResponseEntity.status(200).body(objectService.uploadFile(s3Client, bucketName, dir, file));
+    public ResponseEntity<Map<String,Object>> uploadFile(@PathVariable(name = "bucketName") String bucketName, @RequestParam("file") MultipartFile file, @RequestParam("dir") String dir) throws IOException {
+        return ResponseEntity.status(200).body(Map.of("content", objectService.uploadFile(s3Client, bucketName, dir, file)));
     }
 
 
-    @ApiResponse(responseCode = "200", description = "generate signed url")
+    @Operation(summary  = "generate signed url")
     @PostMapping( "/{bucketName}/file-url")
-    public ResponseEntity<String> generatePresignedUrl(@PathVariable(name = "bucketName") String bucketName,
-                                               @ApiParam(example =  "{\"fileName\" : \"string\"}", required = true)
+    public ResponseEntity<Map<String, Object>> generatePresignedUrl(@PathVariable(name = "bucketName") String bucketName,
                                                @RequestBody  Map<String, String> req) {
-        return ResponseEntity.status(200).body(objectService.generatePresignedUrl( s3Presigner,  bucketName, req.get("fileName")));
+        return ResponseEntity.status(200).body(Map.of("content", objectService.generatePresignedUrl( s3Presigner,  bucketName, req.get("fileName"))));
     }
 
-    @ApiResponse(responseCode = "200", description = "delete file")
+    @Operation(summary  = "delete file")
     @DeleteMapping("/{bucketName}/file")
-    public ResponseEntity<Boolean> deleteFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
-        return ResponseEntity.status(200).body(objectService.deleteFile( s3Client, bucketName, req.get("fileName")));
+    public ResponseEntity<Map<String, Object>> deleteFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
+        return ResponseEntity.status(200).body(Map.of("content", objectService.deleteFile( s3Client, bucketName, req.get("fileName"))));
     }
 
 
-    @ApiResponse(responseCode = "200", description = "delete version file")
+    @Operation(summary  = "delete version file")
     @DeleteMapping("/{bucketName}/file/version")
-    public ResponseEntity<Boolean>deleteVersionFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
-        return ResponseEntity.status(200).body(objectService.deleteVersionedFile( s3Client, bucketName, req.get("fileName"), req.get("versionId") ));
+    public ResponseEntity<Map<String,Object>>deleteVersionFile(@PathVariable(name = "bucketName") String bucketName, @RequestBody Map<String, String> req) {
+        return ResponseEntity.status(200).body( Map.of("content", objectService.deleteVersionedFile( s3Client, bucketName, req.get("fileName"), req.get("versionId") )));
     }
 
 
